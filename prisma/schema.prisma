@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CLIENT
+  ADMIN
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentType {
+  CREDIT
+  STRIPE
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  password      String
+  name          String
+  phone         String?
+  role          Role          @default(CLIENT)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  bookings      Booking[]
+  sessionPasses SessionPass[]
+}
+
+model SessionPass {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id])
+  totalCredits     Int
+  remainingCredits Int
+  purchasedAt      DateTime  @default(now())
+  expiresAt        DateTime
+  stripePaymentId  String?
+  bookings         Booking[]
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  startTime       DateTime
+  endTime         DateTime
+  status          BookingStatus @default(CONFIRMED)
+  paymentType     PaymentType
+  stripePaymentId String?
+  sessionPassId   String?
+  sessionPass     SessionPass?  @relation(fields: [sessionPassId], references: [id])
+  createdAt       DateTime      @default(now())
+  cancelledAt     DateTime?
+}
+
+model Availability {
+  id        String  @id @default(cuid())
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isActive  Boolean @default(true)
+}
+
+model BlockedSlot {
+  id        String   @id @default(cuid())
+  startTime DateTime
+  endTime   DateTime
+  reason    String?
+}
